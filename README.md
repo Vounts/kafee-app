@@ -168,12 +168,12 @@ The application is fully responsive and optimized for:
 ## 🔧 Configuration
 
 ### Available Dates
-Reservations are limited to July 24-31, 2024. Update the constants in `reservation.model.ts`:
+Reservations are limited to July 24-31, 2025. Update the constants in `reservation.model.ts`:
 
 ```typescript
 AVAILABLE_DATES: {
-  START_DATE: new Date('2024-07-24'),
-  END_DATE: new Date('2024-07-31')
+  START_DATE: new Date('2025-07-24'),
+  END_DATE: new Date('2025-07-31')
 }
 ```
 
