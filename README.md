@@ -44,7 +44,7 @@ This single-page application (SPA) allows customers to reserve tables at Kafè b
 Before running this application, ensure you have:
 
 - **Node.js** (v18 or higher)
-- **npm** (v9 or higher)
+- **yarn**
 - **Angular CLI** (v20 or higher)
 
 ## 🚀 Installation & Setup
@@ -77,10 +77,10 @@ The application will be available at `http://localhost:4200`
 ### Unit Tests
 ```bash
 # Run unit tests
-npm test
+yarn test
 
 # Run unit tests with coverage
-npm run test:coverage
+yarn test:coverage
 ```
 
 ### E2E Tests
@@ -89,10 +89,10 @@ npm run test:coverage
 npx playwright install
 
 # Run E2E tests
-npm run e2e
+yarn e2e
 
 # Run E2E tests with UI
-npm run e2e:ui
+yarn e2e:ui
 ```
 
 ## 📁 Project Structure
@@ -232,13 +232,9 @@ The application uses modern CSS Grid for responsive layouts:
 
 ### Build for Production
 ```bash
-npm run build
+yarn build
 ```
 
-### Build for SSR (Server-Side Rendering)
-```bash
-npm run build:ssr
-```
 
 ### Deploy to Static Hosting
 The built application can be deployed to:
@@ -252,10 +248,10 @@ The built application can be deployed to:
 ### Linting
 ```bash
 # Run ESLint
-npm run lint
+yarn lint
 
 # Fix linting issues
-npm run lint:fix
+yarn lint:fix
 ```
 
 ### Type Checking
@@ -269,7 +265,7 @@ npx tsc --noEmit
 ### Bundle Analysis
 ```bash
 # Analyze bundle size
-npm run build -- --stats-json
+yarn build -- --stats-json
 npx webpack-bundle-analyzer dist/stats.json
 ```
 
@@ -322,20 +318,20 @@ The application is optimized for:
 
 #### Angular Material Not Loading
 ```bash
-npm install @angular/material @angular/cdk @angular/animations
+yarn add @angular/material @angular/cdk @angular/animations
 ```
 
 #### Playwright Tests Failing
 ```bash
 npx playwright install
-npm run e2e
+yarn e2e
 ```
 
 #### Build Errors
 ```bash
-npm cache clean --force
+yarn cache clean --force
 rm -rf node_modules package-lock.json
-npm install
+yarn install
 ```
 
 #### CSS Layout Issues
