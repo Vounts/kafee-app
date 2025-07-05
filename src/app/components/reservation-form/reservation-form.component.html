@@ -1,0 +1,424 @@
+<!-- Reservation Form Component Template -->
+<!-- This template provides a step-by-step reservation form with Material Design components -->
+
+<div class="reservation-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <mat-card class="header-card">
+      <div class="header-content">
+        <div class="restaurant-info">
+          <h1 class="restaurant-name">Kafè</h1>
+          <p class="restaurant-subtitle">Andorran Restaurant • Lower East Side</p>
+          <p class="reservation-info">Online Reservations • July 24-31, 2025</p>
+        </div>
+        <div class="header-decoration">
+          <mat-icon class="header-icon">restaurant</mat-icon>
+        </div>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Main Form Section -->
+  <div class="form-section" *ngIf="!reservationConfirmed">
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>Make Your Reservation</mat-card-title>
+        <mat-card-subtitle>
+          Complete the form below to reserve your table at Kafè
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <!-- Stepper for form progression -->
+        <mat-stepper #stepper [linear]="true" class="reservation-stepper">
+          <!-- Step 1: Date and Time Selection -->
+          <mat-step [stepControl]="dateTimeForm" label="Date & Time">
+            <form [formGroup]="dateTimeForm">
+              <div class="step-content">
+                <h3>Select Your Preferred Date and Time</h3>
+                <p class="step-description">
+                  Choose from available dates between July 24-31, 2025. 
+                  Reservations are available in 30-minute slots from 6:00 PM to 10:00 PM.
+                </p>
+
+                <!-- Date Selection -->
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Reservation Date</mat-label>
+                    <input 
+                      matInput 
+                      [matDatepicker]="datePicker" 
+                      formControlName="date"
+                      placeholder="Choose a date"
+                      [min]="START_DATE"
+                      [max]="END_DATE"
+                      required>
+                    <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
+                    <mat-datepicker #datePicker></mat-datepicker>
+                    <mat-error *ngIf="hasError('date', dateTimeForm)">
+                      {{ getErrorMessage('date', dateTimeForm) }}
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <!-- Time Slot Selection -->
+                <div class="form-row" *ngIf="dateTimeForm.get('date')?.value">
+                  <h4>Available Time Slots</h4>
+                  <div class="time-slots-container">
+                    <div 
+                      *ngFor="let timeSlot of availableTimeSlots" 
+                      class="time-slot-option"
+                      [class.available]="isTimeSlotAvailable(timeSlot)"
+                      [class.unavailable]="!isTimeSlotAvailable(timeSlot)"
+                      [class.selected]="dateTimeForm.get('timeSlot')?.value === timeSlot"
+                      (click)="selectTimeSlot(timeSlot)">
+                      
+                      <div class="time-slot-content">
+                        <span class="time-text">{{ formatTimeSlot(timeSlot) }}</span>
+                        <span class="capacity-text" *ngIf="isTimeSlotAvailable(timeSlot)">
+                          {{ getTimeSlotCapacity(timeSlot) }} spots left
+                        </span>
+                        <span class="unavailable-text" *ngIf="!isTimeSlotAvailable(timeSlot)">
+                          Unavailable
+                        </span>
+                      </div>
+                      
+                      <mat-icon *ngIf="dateTimeForm.get('timeSlot')?.value === timeSlot" class="selected-icon">
+                        check_circle
+                      </mat-icon>
+                    </div>
+                  </div>
+
+                  <!-- Loading indicator for availability check -->
+                  <div class="loading-container" *ngIf="isCheckingAvailability">
+                    <mat-spinner diameter="20"></mat-spinner>
+                    <span>Checking availability...</span>
+                  </div>
+
+                  <!-- Alternative time slots -->
+                  <div class="alternatives-container" *ngIf="showAlternatives && alternativeTimeSlots.length > 0">
+                    <mat-divider></mat-divider>
+                    <div class="alternatives-header">
+                      <mat-icon>schedule</mat-icon>
+                      <h4>Alternative Times Available</h4>
+                    </div>
+                    <div class="alternative-slots">
+                      <mat-chip 
+                        *ngFor="let alternative of alternativeTimeSlots"
+                        (click)="selectAlternativeTimeSlot(alternative.timeSlot)"
+                        class="alternative-chip">
+                        {{ formatTimeSlot(alternative.timeSlot) }}
+                        <span class="capacity-badge">{{ alternative.remainingCapacity }} spots</span>
+                      </mat-chip>
+                    </div>
+                  </div>
+
+                  <mat-error *ngIf="hasError('timeSlot', dateTimeForm)" class="field-error">
+                    {{ getErrorMessage('timeSlot', dateTimeForm) }}
+                  </mat-error>
+                </div>
+              </div>
+
+              <div class="step-actions">
+                <button 
+                  mat-raised-button 
+                  color="primary" 
+                  matStepperNext
+                  [disabled]="!dateTimeForm.valid">
+                  Next: Party Details
+                  <mat-icon>arrow_forward</mat-icon>
+                </button>
+              </div>
+            </form>
+          </mat-step>
+
+          <!-- Step 2: Party Details -->
+          <mat-step [stepControl]="partyForm" label="Party Details">
+            <form [formGroup]="partyForm">
+              <div class="step-content">
+                <h3>Tell Us About Your Party</h3>
+                <p class="step-description">
+                  Let us know the size of your party and your seating preference.
+                </p>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="half-width">
+                    <mat-label>Number of Guests</mat-label>
+                    <input 
+                      matInput 
+                      type="number" 
+                      formControlName="partySize"
+                      [min]="MIN_PARTY_SIZE"
+                      [max]="MAX_PARTY_SIZE"
+                      placeholder="2"
+                      required>
+                    <mat-error *ngIf="hasError('partySize', partyForm)">
+                      {{ getErrorMessage('partySize', partyForm) }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="half-width">
+                    <mat-label>Seating Area Preference</mat-label>
+                    <mat-select formControlName="region" required>
+                      <mat-option *ngFor="let region of availableRegions" [value]="region">
+                        {{ getRegionDisplayName(region) }}
+                      </mat-option>
+                    </mat-select>
+                    <mat-error *ngIf="hasError('region', partyForm)">
+                      {{ getErrorMessage('region', partyForm) }}
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <!-- Region descriptions -->
+                <div class="region-info" *ngIf="partyForm.get('region')?.value">
+                  <mat-card class="info-card">
+                    <mat-card-content>
+                      <h4>{{ getRegionDisplayName(partyForm.get('region')?.value) }}</h4>
+                      <p *ngIf="partyForm.get('region')?.value === 'main_dining'">
+                        Our elegant main dining room with comfortable seating and ambient lighting.
+                      </p>
+                      <p *ngIf="partyForm.get('region')?.value === 'bar_area'">
+                        Casual bar seating with a lively atmosphere, perfect for drinks and small plates.
+                      </p>
+                      <p *ngIf="partyForm.get('region')?.value === 'outdoor_patio'">
+                        Beautiful outdoor patio with fresh air and city views (weather permitting).
+                      </p>
+                      <p *ngIf="partyForm.get('region')?.value === 'private_room'">
+                        Private dining room for intimate gatherings and special occasions.
+                      </p>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+              </div>
+
+              <div class="step-actions">
+                <button mat-button matStepperPrevious>
+                  <mat-icon>arrow_back</mat-icon>
+                  Back
+                </button>
+                <button 
+                  mat-raised-button 
+                  color="primary" 
+                  matStepperNext
+                  [disabled]="!partyForm.valid">
+                  Next: Contact Info
+                  <mat-icon>arrow_forward</mat-icon>
+                </button>
+              </div>
+            </form>
+          </mat-step>
+
+          <!-- Step 3: Contact Information -->
+          <mat-step [stepControl]="contactForm" label="Contact Information">
+            <form [formGroup]="contactForm">
+              <div class="step-content">
+                <h3>Your Contact Information</h3>
+                <p class="step-description">
+                  We'll use this information to confirm your reservation and contact you if needed.
+                </p>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Full Name</mat-label>
+                    <input 
+                      matInput 
+                      formControlName="customerName"
+                      placeholder="Enter your full name"
+                      required>
+                    <mat-error *ngIf="hasError('customerName', contactForm)">
+                      {{ getErrorMessage('customerName', contactForm) }}
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="half-width">
+                    <mat-label>Email Address</mat-label>
+                    <input 
+                      matInput 
+                      type="email" 
+                      formControlName="email"
+                      placeholder="your.email@example.com"
+                      required>
+                    <mat-error *ngIf="hasError('email', contactForm)">
+                      {{ getErrorMessage('email', contactForm) }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="half-width">
+                    <mat-label>Phone Number</mat-label>
+                    <input 
+                      matInput 
+                      type="tel" 
+                      formControlName="phone"
+                      placeholder="(555) 123-4567"
+                      required>
+                    <mat-error *ngIf="hasError('phone', contactForm)">
+                      {{ getErrorMessage('phone', contactForm) }}
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <div class="step-actions">
+                <button mat-button matStepperPrevious>
+                  <mat-icon>arrow_back</mat-icon>
+                  Back
+                </button>
+                <button 
+                  mat-raised-button 
+                  color="primary" 
+                  matStepperNext
+                  [disabled]="!contactForm.valid">
+                  Next: Preferences
+                  <mat-icon>arrow_forward</mat-icon>
+                </button>
+              </div>
+            </form>
+          </mat-step>
+
+          <!-- Step 4: Additional Preferences -->
+          <mat-step [stepControl]="preferencesForm" label="Preferences">
+            <form [formGroup]="preferencesForm">
+              <div class="step-content">
+                <h3>Additional Preferences</h3>
+                <p class="step-description">
+                  Help us provide the best experience for your party.
+                </p>
+
+                <div class="preferences-container">
+                  <mat-checkbox formControlName="hasChildren" class="preference-checkbox">
+                    <div class="checkbox-content">
+                      <mat-icon>child_care</mat-icon>
+                      <span>Children will be in our party</span>
+                    </div>
+                  </mat-checkbox>
+
+                  <mat-checkbox formControlName="smokingRequested" class="preference-checkbox">
+                    <div class="checkbox-content">
+                      <mat-icon>smoking_rooms</mat-icon>
+                      <span>Smoking area preferred (if available)</span>
+                    </div>
+                  </mat-checkbox>
+                </div>
+
+                <!-- Reservation Summary -->
+                <div class="reservation-summary">
+                  <mat-card class="summary-card">
+                    <mat-card-header>
+                      <mat-card-title>Reservation Summary</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                      <div class="summary-item">
+                        <span class="summary-label">Date:</span>
+                        <span class="summary-value">{{ dateTimeForm.get('date')?.value | date:'fullDate' }}</span>
+                      </div>
+                      <div class="summary-item">
+                        <span class="summary-label">Time:</span>
+                        <span class="summary-value">{{ formatTimeSlot(dateTimeForm.get('timeSlot')?.value) }}</span>
+                      </div>
+                      <div class="summary-item">
+                        <span class="summary-label">Party Size:</span>
+                        <span class="summary-value">{{ partyForm.get('partySize')?.value }} guests</span>
+                      </div>
+                      <div class="summary-item">
+                        <span class="summary-label">Seating Area:</span>
+                        <span class="summary-value">{{ getRegionDisplayName(partyForm.get('region')?.value) }}</span>
+                      </div>
+                      <div class="summary-item">
+                        <span class="summary-label">Name:</span>
+                        <span class="summary-value">{{ contactForm.get('customerName')?.value }}</span>
+                      </div>
+                    </mat-card-content>
+                  </mat-card>
+                </div>
+              </div>
+
+              <div class="step-actions">
+                <button mat-button matStepperPrevious>
+                  <mat-icon>arrow_back</mat-icon>
+                  Back
+                </button>
+                <button 
+                  mat-raised-button 
+                  color="primary" 
+                  (click)="submitReservation()"
+                  [disabled]="!preferencesForm.valid || isSubmitting">
+                  <mat-spinner diameter="20" *ngIf="isSubmitting"></mat-spinner>
+                  <span *ngIf="!isSubmitting">Confirm Reservation</span>
+                  <span *ngIf="isSubmitting">Processing...</span>
+                </button>
+              </div>
+            </form>
+          </mat-step>
+        </mat-stepper>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Confirmation Section -->
+  <div class="confirmation-section" *ngIf="reservationConfirmed">
+    <mat-card class="confirmation-card">
+      <mat-card-header>
+        <div class="success-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <mat-card-title>Reservation Confirmed!</mat-card-title>
+        <mat-card-subtitle>
+          Thank you for choosing Kafè. We look forward to serving you.
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="confirmation-details">
+          <div class="detail-item">
+            <span class="detail-label">Confirmation Code:</span>
+            <span class="detail-value confirmation-code">{{ reservationConfirmed.confirmationCode }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Reservation ID:</span>
+            <span class="detail-value">{{ reservationConfirmed.reservationId }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Date:</span>
+            <span class="detail-value">{{ reservationConfirmed.date | date:'fullDate' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Time:</span>
+            <span class="detail-value">{{ formatTimeSlot(reservationConfirmed.timeSlot) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Party Size:</span>
+            <span class="detail-value">{{ reservationConfirmed.partySize }} guests</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Seating Area:</span>
+            <span class="detail-value">{{ getRegionDisplayName(reservationConfirmed.region) }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Name:</span>
+            <span class="detail-value">{{ reservationConfirmed.customerName }}</span>
+          </div>
+        </div>
+
+        <div class="confirmation-notes">
+          <h4>Important Information</h4>
+          <ul>
+            <li>Please arrive 5-10 minutes before your reservation time</li>
+            <li>We hold tables for 15 minutes past the reservation time</li>
+            <li>Please call us if you need to cancel or modify your reservation</li>
+            <li>A confirmation email has been sent to {{ reservationConfirmed.email }}</li>
+          </ul>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button mat-raised-button color="primary" (click)="resetForm()">
+          <mat-icon>add</mat-icon>
+          Make Another Reservation
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div> 
